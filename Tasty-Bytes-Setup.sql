@@ -279,8 +279,3 @@ SELECT
     Total_Sales,
     Visited_Location_Ids_Array
 FROM Tasty_Bytes.Harmonized.Customer_Loyalty_Metrics_V;
-
--- Create the Stage referencing the Blob Location and CSV File Format
-CREATE OR REPLACE STAGE Tasty_Bytes.Public.Blob_Stage
-url = 's3://sfquickstarts/tastybytes/'
-file_format = (type = csv);
