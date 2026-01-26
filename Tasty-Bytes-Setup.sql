@@ -1,334 +1,286 @@
----> set the Role
+-- Set the Role
 USE ROLE accountadmin;
 
----> set the Warehouse
-USE WAREHOUSE compute_wh;
+-- Set the Warehouse
+USE WAREHOUSE COMPUTE_WH;
 
----> create the Tasty Bytes Database
-CREATE OR REPLACE DATABASE tasty_bytes_sample_data;
+/********************************************
+    Database and Schema Creation
+********************************************/
 
----> create the Raw POS (Point-of-Sale) Schema
-CREATE OR REPLACE SCHEMA tasty_bytes_sample_data.raw_pos;
+-- Create the Tasty Bytes Database
+CREATE OR REPLACE DATABASE Tasty_Bytes;
 
----> create the Raw Menu Table
-CREATE OR REPLACE TABLE tasty_bytes_sample_data.raw_pos.menu
+-- Create the Raw POS (Point-of-Sale) Schema
+CREATE OR REPLACE SCHEMA Tasty_Bytes.Raw_Pos;
+
+-- Create Raw_Customer schema
+CREATE OR REPLACE SCHEMA Tasty_Bytes.Raw_Customer;
+
+-- Create Harmonized schema
+CREATE OR REPLACE SCHEMA Tasty_Bytes.Harmonized;
+
+-- Create Analytics schema
+CREATE OR REPLACE SCHEMA Tasty_Bytes.Analytics;
+
+/********************************************
+    Table Creation
+********************************************/
+-- Raw_Pos Country
+CREATE OR REPLACE TABLE Tasty_Bytes.Raw_Pos.Country
 (
-    menu_id NUMBER(19,0),
-    menu_type_id NUMBER(38,0),
-    menu_type VARCHAR(16777216),
-    truck_brand_name VARCHAR(16777216),
-    menu_item_id NUMBER(38,0),
-    menu_item_name VARCHAR(16777216),
-    item_category VARCHAR(16777216),
-    item_subcategory VARCHAR(16777216),
-    cost_of_goods_usd NUMBER(38,4),
-    sale_price_usd NUMBER(38,4),
-    menu_item_health_metrics_obj VARIANT
+    Country_Id NUMBER(18,0),
+    Country VARCHAR(16777216),
+    ISO_Currency VARCHAR(3),
+    ISO_Country VARCHAR(2),
+    City_Id NUMBER(19,0),
+    City VARCHAR(16777216),
+    City_Population VARCHAR(16777216)
 );
 
----> confirm the empty Menu table exists
-SELECT * FROM tasty_bytes_sample_data.raw_pos.menu;
-
----> create the Stage referencing the Blob location and CSV File Format
-CREATE OR REPLACE STAGE tasty_bytes_sample_data.public.blob_stage
-url = 's3://sfquickstarts/tastybytes/'
-file_format = (type = csv);
-
----> query the Stage to find the Menu CSV file
-LIST @tasty_bytes_sample_data.public.blob_stage/raw_pos/menu/;
-
----> copy the Menu file into the Menu table
-COPY INTO tasty_bytes_sample_data.raw_pos.menu
-FROM @tasty_bytes_sample_data.public.blob_stage/raw_pos/menu/;
-
----> create raw_customer schema
-CREATE OR REPLACE SCHEMA tasty_bytes.raw_customer;
-
----> create harmonized schema
-CREATE OR REPLACE SCHEMA tasty_bytes.harmonized;
-
----> create analytics schema
-CREATE OR REPLACE SCHEMA tasty_bytes.analytics;
-
----> create warehouses
-CREATE OR REPLACE WAREHOUSE demo_build_wh
-    WAREHOUSE_SIZE = 'xxxlarge'
-    WAREHOUSE_TYPE = 'standard'
-    AUTO_SUSPEND = 60
-    AUTO_RESUME = TRUE
-    INITIALLY_SUSPENDED = TRUE
-COMMENT = 'demo build warehouse for tasty bytes assets';
-    
-CREATE OR REPLACE WAREHOUSE tasty_de_wh
-    WAREHOUSE_SIZE = 'xsmall'
-    WAREHOUSE_TYPE = 'standard'
-    AUTO_SUSPEND = 60
-    AUTO_RESUME = TRUE
-    INITIALLY_SUSPENDED = TRUE
-COMMENT = 'data engineering warehouse for tasty bytes';
-
-USE WAREHOUSE tasty_de_wh;
-
----> file format creation
-CREATE OR REPLACE FILE FORMAT tasty_bytes.public.csv_ff 
-type = 'csv';
-
----> stage creation
-CREATE OR REPLACE STAGE tasty_bytes.public.s3load
-url = 's3://sfquickstarts/frostbyte_tastybytes/'
-file_format = tasty_bytes.public.csv_ff;
----> example of creating an internal stage
--- CREATE OR REPLACE STAGE tasty_bytes.public.internal_stage_test;
-
----> list files in stage
-ls @tasty_bytes.public.s3load;
-
----> country table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.country
+-- Raw_Pos Franchise
+CREATE OR REPLACE TABLE Tasty_Bytes.Raw_Pos.Franchise 
 (
-    country_id NUMBER(18,0),
-    country VARCHAR(16777216),
-    iso_currency VARCHAR(3),
-    iso_country VARCHAR(2),
-    city_id NUMBER(19,0),
-    city VARCHAR(16777216),
-    city_population VARCHAR(16777216)
+    Franchise_Id NUMBER(38,0),
+    First_Name VARCHAR(16777216),
+    Last_Name VARCHAR(16777216),
+    City VARCHAR(16777216),
+    Country VARCHAR(16777216),
+    E_Mail VARCHAR(16777216),
+    Phone_Number VARCHAR(16777216) 
 );
 
----> franchise table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.franchise 
+-- Raw_Pos Location
+CREATE OR REPLACE TABLE Tasty_Bytes.Raw_Pos.Location
 (
-    franchise_id NUMBER(38,0),
-    first_name VARCHAR(16777216),
-    last_name VARCHAR(16777216),
-    city VARCHAR(16777216),
-    country VARCHAR(16777216),
-    e_mail VARCHAR(16777216),
-    phone_number VARCHAR(16777216) 
+    Location_Id NUMBER(19,0),
+    Placekey VARCHAR(16777216),
+    Location VARCHAR(16777216),
+    City VARCHAR(16777216),
+    Region VARCHAR(16777216),
+    ISO_Country_Code VARCHAR(16777216),
+    Country VARCHAR(16777216)
 );
 
----> location table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.location
+-- Raw_Pos Menu
+CREATE OR REPLACE TABLE Tasty_Bytes.Raw_Pos.Menu
 (
-    location_id NUMBER(19,0),
-    placekey VARCHAR(16777216),
-    location VARCHAR(16777216),
-    city VARCHAR(16777216),
-    region VARCHAR(16777216),
-    iso_country_code VARCHAR(16777216),
-    country VARCHAR(16777216)
+    Menu_Id NUMBER(19,0),
+    Menu_Type_Id NUMBER(38,0),
+    Menu_Type VARCHAR(16777216),
+    Truck_Brand_Name VARCHAR(16777216),
+    Menu_Item_Id NUMBER(38,0),
+    Menu_Item_Name VARCHAR(16777216),
+    Item_Category VARCHAR(16777216),
+    Item_SubCategory VARCHAR(16777216),
+    Cost_Of_Goods_USD NUMBER(38,4),
+    Sale_Price_USD NUMBER(38,4),
+    Menu_Item_Health_Metrics_Obj VARIANT
 );
 
----> menu table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.menu
+-- Raw_Pos Truck
+CREATE OR REPLACE TABLE Tasty_Bytes.Raw_Pos.Truck
 (
-    menu_id NUMBER(19,0),
-    menu_type_id NUMBER(38,0),
-    menu_type VARCHAR(16777216),
-    truck_brand_name VARCHAR(16777216),
-    menu_item_id NUMBER(38,0),
-    menu_item_name VARCHAR(16777216),
-    item_category VARCHAR(16777216),
-    item_subcategory VARCHAR(16777216),
-    cost_of_goods_usd NUMBER(38,4),
-    sale_price_usd NUMBER(38,4),
-    menu_item_health_metrics_obj VARIANT
+    Truck_Id NUMBER(38,0),
+    Menu_Type_Id NUMBER(38,0),
+    Primary_City VARCHAR(16777216),
+    Region VARCHAR(16777216),
+    ISO_Region VARCHAR(16777216),
+    Country VARCHAR(16777216),
+    ISO_Country_Code VARCHAR(16777216),
+    Franchise_Flag NUMBER(38,0),
+    Year NUMBER(38,0),
+    Make VARCHAR(16777216),
+    Model VARCHAR(16777216),
+    EV_Flag NUMBER(38,0),
+    Franchise_Id NUMBER(38,0),
+    Truck_Opening_Date DATE
 );
 
----> truck table build 
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.truck
+-- Raw_Pos Order_Header
+CREATE OR REPLACE TABLE Tasty_Bytes.Raw_Pos.Order_Header
 (
-    truck_id NUMBER(38,0),
-    menu_type_id NUMBER(38,0),
-    primary_city VARCHAR(16777216),
-    region VARCHAR(16777216),
-    iso_region VARCHAR(16777216),
-    country VARCHAR(16777216),
-    iso_country_code VARCHAR(16777216),
-    franchise_flag NUMBER(38,0),
-    year NUMBER(38,0),
-    make VARCHAR(16777216),
-    model VARCHAR(16777216),
-    ev_flag NUMBER(38,0),
-    franchise_id NUMBER(38,0),
-    truck_opening_date DATE
+    Order_Id NUMBER(38,0),
+    Truck_Id NUMBER(38,0),
+    Location_Id FLOAT,
+    Customer_Id NUMBER(38,0),
+    Discount_Id VARCHAR(16777216),
+    Shift_Id NUMBER(38,0),
+    Shift_Start_Time TIME(9),
+    Shift_End_Time TIME(9),
+    Order_Channel VARCHAR(16777216),
+    Order_TS TIMESTAMP_NTZ(9),
+    Served_TS VARCHAR(16777216),
+    Order_Currency VARCHAR(3),
+    Order_Amount NUMBER(38,4),
+    Order_Tax_Amount VARCHAR(16777216),
+    Order_Discount_Amount VARCHAR(16777216),
+    Order_Total NUMBER(38,4)
 );
 
----> order_header table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.order_header
+-- Raw_Pos Order_Detail
+CREATE OR REPLACE TABLE Tasty_Bytes.Raw_Pos.Order_Detail 
 (
-    order_id NUMBER(38,0),
-    truck_id NUMBER(38,0),
-    location_id FLOAT,
-    customer_id NUMBER(38,0),
-    discount_id VARCHAR(16777216),
-    shift_id NUMBER(38,0),
-    shift_start_time TIME(9),
-    shift_end_time TIME(9),
-    order_channel VARCHAR(16777216),
-    order_ts TIMESTAMP_NTZ(9),
-    served_ts VARCHAR(16777216),
-    order_currency VARCHAR(3),
-    order_amount NUMBER(38,4),
-    order_tax_amount VARCHAR(16777216),
-    order_discount_amount VARCHAR(16777216),
-    order_total NUMBER(38,4)
+    Order_Detail_Id NUMBER(38,0),
+    Order_Id NUMBER(38,0),
+    Menu_Item_Id NUMBER(38,0),
+    Discount_Id VARCHAR(16777216),
+    Line_Number NUMBER(38,0),
+    Quantity NUMBER(5,0),
+    Unit_Price NUMBER(38,4),
+    Price NUMBER(38,4),
+    Order_Item_Discount_Amount VARCHAR(16777216)
 );
 
----> order_detail table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.order_detail 
+-- Raw_Customer Customer_Loyalty
+CREATE OR REPLACE TABLE Tasty_Bytes.Raw_Customer.Customer_Loyalty
 (
-    order_detail_id NUMBER(38,0),
-    order_id NUMBER(38,0),
-    menu_item_id NUMBER(38,0),
-    discount_id VARCHAR(16777216),
-    line_number NUMBER(38,0),
-    quantity NUMBER(5,0),
-    unit_price NUMBER(38,4),
-    price NUMBER(38,4),
-    order_item_discount_amount VARCHAR(16777216)
+    Customer_Id NUMBER(38,0),
+    First_Name VARCHAR(16777216),
+    Last_Name VARCHAR(16777216),
+    City VARCHAR(16777216),
+    Country VARCHAR(16777216),
+    Postal_Code VARCHAR(16777216),
+    Preferred_Language VARCHAR(16777216),
+    Gender VARCHAR(16777216),
+    Favourite_Brand VARCHAR(16777216),
+    Marital_Status VARCHAR(16777216),
+    Children_Count VARCHAR(16777216),
+    Sign_Up_Date DATE,
+    Birthday_Date DATE,
+    E_Mail VARCHAR(16777216),
+    Phone_Number VARCHAR(16777216)
 );
 
----> customer loyalty table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_customer.customer_loyalty
-(
-    customer_id NUMBER(38,0),
-    first_name VARCHAR(16777216),
-    last_name VARCHAR(16777216),
-    city VARCHAR(16777216),
-    country VARCHAR(16777216),
-    postal_code VARCHAR(16777216),
-    preferred_language VARCHAR(16777216),
-    gender VARCHAR(16777216),
-    favourite_brand VARCHAR(16777216),
-    marital_status VARCHAR(16777216),
-    children_count VARCHAR(16777216),
-    sign_up_date DATE,
-    birthday_date DATE,
-    e_mail VARCHAR(16777216),
-    phone_number VARCHAR(16777216)
-);
+/********************************************
+    View Creation
+********************************************/
 
----> orders_v view
-CREATE OR REPLACE VIEW tasty_bytes.harmonized.orders_v
+-- Harmonized Orders_V
+CREATE OR REPLACE VIEW Tasty_Bytes.Harmonized.Orders_V
     AS
 SELECT 
-    oh.order_id,
-    oh.truck_id,
-    oh.order_ts,
-    od.order_detail_id,
-    od.line_number,
-    m.truck_brand_name,
-    m.menu_type,
-    t.primary_city,
-    t.region,
-    t.country,
-    t.franchise_flag,
-    t.franchise_id,
-    f.first_name AS franchisee_first_name,
-    f.last_name AS franchisee_last_name,
-    l.location_id,
-    cl.customer_id,
-    cl.first_name,
-    cl.last_name,
-    cl.e_mail,
-    cl.phone_number,
-    cl.children_count,
-    cl.gender,
-    cl.marital_status,
-    od.menu_item_id,
-    m.menu_item_name,
-    od.quantity,
-    od.unit_price,
-    od.price,
-    oh.order_amount,
-    oh.order_tax_amount,
-    oh.order_discount_amount,
-    oh.order_total
-FROM tasty_bytes.raw_pos.order_detail od
-JOIN tasty_bytes.raw_pos.order_header oh
-    ON od.order_id = oh.order_id
-JOIN tasty_bytes.raw_pos.truck t
-    ON oh.truck_id = t.truck_id
-JOIN tasty_bytes.raw_pos.menu m
-    ON od.menu_item_id = m.menu_item_id
-JOIN tasty_bytes.raw_pos.franchise f
-    ON t.franchise_id = f.franchise_id
-JOIN tasty_bytes.raw_pos.location l
-    ON oh.location_id = l.location_id
-LEFT JOIN tasty_bytes.raw_customer.customer_loyalty cl
-    ON oh.customer_id = cl.customer_id;
+    oh.Order_Id,
+    oh.Truck_Id,
+    oh.Order_TS,
+    od.Order_Detail_Id,
+    od.Line_Number,
+    m.Truck_Brand_Name,
+    m.Menu_Type,
+    t.Primary_City,
+    t.Region,
+    t.Country,
+    t.Franchise_Flag,
+    t.Franchise_Id,
+    f.First_Name AS Franchisee_First_Name,
+    f.Last_Name AS Franchisee_Last_Name,
+    l.Location_Id,
+    cl.Customer_Id,
+    cl.First_Name,
+    cl.Last_Name,
+    cl.E_Mail,
+    cl.Phone_Number,
+    cl.Children_Count,
+    cl.Gender,
+    cl.Marital_Status,
+    od.Menu_Item_Id,
+    m.Menu_Item_Name,
+    od.Quantity,
+    od.Unit_Price,
+    od.Price,
+    oh.Order_Amount,
+    oh.Order_Tax_Amount,
+    oh.Order_Discount_Amount,
+    oh.Order_Total
+FROM Tasty_Bytes.Raw_Pos.Order_Detail od
+INNER JOIN Tasty_Bytes.Raw_Pos.Order_Header oh ON od.Order_Id = oh.Order_Id
+INNER JOIN Tasty_Bytes.Raw_Pos.Truck t ON oh.Truck_Id = t.Truck_Id
+INNER JOIN Tasty_Bytes.Raw_Pos.Menu m ON od.Menu_Item_Id = m.Menu_Item_Id
+INNER JOIN Tasty_Bytes.Raw_Pos.Franchise f ON t.Franchise_Id = f.Franchise_Id
+INNER JOIN Tasty_Bytes.Raw_Pos.Location l ON oh.Location_Id = l.Location_Id
+LEFT JOIN Tasty_Bytes.Raw_Customer.Customer_Loyalty cl ON oh.Customer_Id = cl.Customer_Id;
 
----> loyalty_metrics_v view
-CREATE OR REPLACE VIEW tasty_bytes.harmonized.customer_loyalty_metrics_v
+-- Harmonized Loyalty_Metrics_V
+CREATE OR REPLACE VIEW Tasty_Bytes.Harmonized.Customer_Loyalty_Metrics_V
     AS
 SELECT 
-    cl.customer_id,
-    cl.city,
-    cl.country,
-    cl.first_name,
-    cl.last_name,
-    cl.phone_number,
-    cl.e_mail,
-    SUM(oh.order_total) AS total_sales,
-    ARRAY_AGG(DISTINCT oh.location_id) AS visited_location_ids_array
-FROM tasty_bytes.raw_customer.customer_loyalty cl
-JOIN tasty_bytes.raw_pos.order_header oh
-ON cl.customer_id = oh.customer_id
-GROUP BY cl.customer_id, cl.city, cl.country, cl.first_name,
-cl.last_name, cl.phone_number, cl.e_mail;
+    cl.Customer_Id,
+    cl.City,
+    cl.Country,
+    cl.First_Name,
+    cl.Last_Name,
+    cl.Phone_Number,
+    cl.E_Mail,
+    SUM(oh.Order_Total) AS Total_Sales,
+    ARRAY_AGG(DISTINCT oh.Location_Id) AS Visited_Location_Ids_Array
+FROM Tasty_Bytes.Raw_Customer.Customer_Loyalty cl
+INNER JOIN Tasty_Bytes.Raw_Pos.Order_Header oh ON cl.Customer_Id = oh.Customer_Id
+GROUP BY 
+    cl.Customer_Id,
+    cl.City,
+    cl.Country,
+    cl.First_Name,
+    cl.Last_Name,
+    cl.Phone_Number,
+    cl.E_Mail;
 
----> orders_v view
-CREATE OR REPLACE VIEW tasty_bytes.analytics.orders_v
+-- Analytics Orders_V
+CREATE OR REPLACE VIEW Tasty_Bytes.Analytics.Orders_V
 COMMENT = 'Tasty Bytes Order Detail View'
     AS
-SELECT DATE(o.order_ts) AS date, * FROM tasty_bytes.harmonized.orders_v o;
+SELECT 
+    DATE(o.Order_TS) AS Date,
+    o.Order_Id,
+    o.Truck_Id,
+    o.Order_TS,
+    o.Order_Detail_Id,
+    o.Line_Number,
+    o.Truck_Brand_Name,
+    o.Menu_Type,
+    o.Primary_City,
+    o.Region,
+    o.Country,
+    o.Franchise_Flag,
+    o.Franchise_Id,
+    o.Franchisee_First_Name,
+    o.Franchisee_Last_Name,
+    o.Location_Id,
+    o.Customer_Id,
+    o.First_Name,
+    o.Last_Name,
+    o.E_Mail,
+    o.Phone_Number,
+    o.Children_Count,
+    o.Gender,
+    o.Marital_Status,
+    o.Menu_Item_Id,
+    o.Menu_Item_Name,
+    o.Quantity,
+    o.Unit_Price,
+    o.Price,
+    o.Order_Amount,
+    o.Order_Tax_Amount,
+    o.Order_Discount_Amount,
+    o.Order_Total
+FROM Tasty_Bytes.Harmonized.Orders_V o;
 
----> customer_loyalty_metrics_v view
-CREATE OR REPLACE VIEW tasty_bytes.analytics.customer_loyalty_metrics_v
+-- Analytics Customer_Loyalty_Metrics_V
+CREATE OR REPLACE VIEW Tasty_Bytes.Analytics.Customer_Loyalty_Metrics_V
 COMMENT = 'Tasty Bytes Customer Loyalty Member Metrics View'
     AS
-SELECT * FROM tasty_bytes.harmonized.customer_loyalty_metrics_v;
+SELECT 
+    Customer_Id,
+    City,
+    Country,
+    First_Name,
+    Last_Name,
+    Phone_Number,
+    E_Mail,
+    Total_Sales,
+    Visited_Location_Ids_Array
+FROM Tasty_Bytes.Harmonized.Customer_Loyalty_Metrics_V;
 
-USE WAREHOUSE demo_build_wh;
-
----> country table load
-COPY INTO tasty_bytes.raw_pos.country
-FROM @tasty_bytes.public.s3load/raw_pos/country/;
-
----> franchise table load
-COPY INTO tasty_bytes.raw_pos.franchise
-FROM @tasty_bytes.public.s3load/raw_pos/franchise/;
-
----> location table load
-COPY INTO tasty_bytes.raw_pos.location
-FROM @tasty_bytes.public.s3load/raw_pos/location/;
-
----> menu table load
-COPY INTO tasty_bytes.raw_pos.menu
-FROM @tasty_bytes.public.s3load/raw_pos/menu/;
-
----> truck table load
-COPY INTO tasty_bytes.raw_pos.truck
-FROM @tasty_bytes.public.s3load/raw_pos/truck/;
-
----> customer_loyalty table load
-COPY INTO tasty_bytes.raw_customer.customer_loyalty
-FROM @tasty_bytes.public.s3load/raw_customer/customer_loyalty/;
-
----> order_header table load
-COPY INTO tasty_bytes.raw_pos.order_header
-FROM @tasty_bytes.public.s3load/raw_pos/order_header/;
-
----> order_detail table load
-COPY INTO tasty_bytes.raw_pos.order_detail
-FROM @tasty_bytes.public.s3load/raw_pos/order_detail/;
-
----> drop demo_build_wh
-DROP WAREHOUSE IF EXISTS demo_build_wh;
-
-USE WAREHOUSE TASTY_DE_WH;
-
-SELECT file_name, error_count, status, last_load_time FROM snowflake.account_usage.copy_history
-  ORDER BY last_load_time DESC
-  LIMIT 10;
+-- Create the Stage referencing the Blob Location and CSV File Format
+CREATE OR REPLACE STAGE Tasty_Bytes.Public.Blob_Stage
+url = 's3://sfquickstarts/tastybytes/'
+file_format = (type = csv);
