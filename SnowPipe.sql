@@ -6,7 +6,7 @@ CREATE OR REPLACE STORAGE INTEGRATION S3_role_integration
   STORAGE_AWS_ROLE_ARN = "REDACTED"
   STORAGE_ALLOWED_LOCATIONS = ("REDACTED");
 
--- Describe the storage integration
+-- Describe the storage integration to get data for completing set up on AWS
 DESCRIBE INTEGRATION S3_role_integration;
 
 -- Create the new database to house S3 data
